@@ -105,6 +105,12 @@ drug_use_test <- drug_use_subset[-train_index, ]
 __(c).__  Fit a logistic regression to model `recent_cannabis_use` as a function of all other predictors in `drug_use_train`.  Fit this regression using the training data only.  Display the results by calling the `summary` function on the logistic regression object.
 
 
+```{r}
+logistic.cannabis =glm(recent_cannabis_use~., data=drug_use_train, family =binomial)
+
+summary(logistic.cannabis)
+```
+
 
 
 <!-- #__(d).__  You observe the prediction probability for `recent_canabis_use` for a male.  If this person was a female (assuming all other predictors remain the same) how would the _odds_ of the prediction change? If a different person was a female with an age was 2 units larger than the male (remember age is not in terms of years for this data so we call it "units") how would the odds of cannabis use for this person differ from the male (again assume all other predictors remain the same)?  -->
@@ -112,9 +118,26 @@ __(c).__  Fit a logistic regression to model `recent_cannabis_use` as a function
 
 __(d).__ (__231__ only).  Generalized linear models for binary data involve a link function, $g$ which relates a linear function of the predictors to a function of the probability $p$: $g(p) = \beta_0 + \beta_1X_1 + ... \beta_p X_p$.  $g$ is a function which maps $p \in [0, 1]$ to $\mathbb{R}$.  Logistic regression is based on the _logit_ link function, $g(p) = log(p/(1-p))$.  In class we mentioned another link function, called the probit: $g(p) = \Phi^{-1}(p)$ where $\Phi$ is the cumulative density function of the normal distribution. Another often used link function is the "c-log-log" link: $g(p) = log(-log(1-p))$.  
 
-Plot the fitted values for logistic regression fit of the training data on the x-axis and the fitted values for the probit regression on y-axis.  In the plot command (assuming you use the base plotting package, not ggplot) set `pch=19` and `cex=0.2` (this makes the points smaller and more legible).   Include the line y=x with the command `abline(a=0, b=1, col="red")`.  Make another identical plot, this time replacing the y-axis with the predicted values from a cloglog regression.
+Plot the fitted values for logistic regression fit of the training data on the x-axis and the fitted values for the probit regression on y-axis.  In the plot command (assuming you use the base plotting package, not ggplot) set `pch=19` and `cex=0.2` (this makes the points smaller and more legible).   Include the line y=x with the command `abline(a=0, b=1, col="red")`.  Make another identical plot, this time replacing the y-axis with the predicted values from a cloglog 
+
+```{r}
+probit.cannabis = glm(recent_cannabis_use~., data=drug_use_train, family = binomial(link = "probit"))
+cloglog.cannabis = glm(recent_cannabis_use~., data=drug_use_train, family = binomial(link = "cloglog"))
+
+plot(logistic.cannabis[["fitted.values"]], probit.cannabis[["fitted.values"]], pch = 19, cex = 0.2, xlab = "Fitted Values from Logit", ylab = "Fitted Values from Probit")
+abline(a=0, b=1, col="red")
+
+```
+
+```{r}
+plot(logistic.cannabis[["fitted.values"]], cloglog.cannabis[["fitted.values"]], pch = 19, cex = 0.2, xlab = "Fitted Values from Logit", ylab = "Fitted Values from cloglog")
+abline(a=0, b=1, col="red")
+```
+
 
 Comment on the differences between the estimated probabilities in each plot.  Things you should comment on include: 1) which link function (probit or cloglog) leads to predictions that are most similar to the logistic regression predictions? 2) for what range of probabilities are the probit and cloglog predictions values more or less extreme than the logit values? 3) Does either probit or cloglog regression seem to estimate systematically smaller or larger probabilities than the logistic regression for a certain range of probabilities?
+
+The probit function leads to predictions that are more similar to the logistic predictions because the fitted values most closely follow the line y = x. The cloglog fitted vales are more extreme than the logit function for probablities of roughly 0.3 and below and they are less extreme than the logit function for probabilities of about 0.5 to 0.9. As a result, the cloglog seems to systematically estimate smaller or larger probabilities over these certain probability ranges. The probit function tends to have slightly higher values than the logit function for the range of probabilities from 0.3 until close to 0.5 and tends to estimate lower values than the logit function for the range from 0.6 until close to 0.9. These differences between the probit and logit are much less pronounced than in the cloglog vs logit comparison. Due to this minimal difference it feels a little strange to call these differences between probit and logit "systematic" but maybe this description is still fair given the consistently higher or lower points.
 
 
 Hint: in logistic regression we set `family=binomial(link="logit"")`.  To fit probit and cloglog regressions change the value of the `link` argument appropriately.
@@ -133,27 +156,100 @@ tree_parameters = tree.control(nobs=nrow(drug_use_train), minsize=10, mindev=1e-
 
 This sets the smallest number of allowed observations in each leaf node to 10 and requires a deviance of at least 1e-3 to split a node.
 
+```{r}
+cannabis.tree = tree(recent_cannabis_use~.,data = drug_use_train, control = tree_parameters)
+summary(cannabis.tree)
+```
+
+
         
 __(a).__ Use 10-fold CV to select the a tree which minimizes the cross-validation misclassification  rate.  Use the function `cv.tree`, and set the argument `FUN=prune.misclass`.  Note: you do not need to use a `do.chunk` function since the `tree` package will do cross validation for you.  Find the size of the tree which minimizes the cross validation error.  If multiple trees have the same minimum cross validated misclassification rate, set `best_size` to the smallest tree size with that minimum rate. 
 
 
+```{r}
+
+nfold = 10
+set.seed(1)
+folds = seq.int(nrow(drug_use_train)) %>%       ## sequential obs ids
+    cut(breaks = nfold, labels=FALSE) %>%   ## sequential fold ids
+    sample                                  ## random fold ids
+
+cannabis.tree.cv = cv.tree(cannabis.tree, FUN = prune.misclass, K = 10, rand = folds)
+
+best.cv = min(cannabis.tree.cv$size[which(cannabis.tree.cv$dev==min(cannabis.tree.cv$dev, na.rm = TRUE))])
+
+cannabis.tree.cv$size
+cannabis.tree.cv$dev
+
+best.cv
+```
+The tree that minimizes the cross validation error has 7 nodes.
         
 __(b).__ Prune the tree to the size found in the previous part and plot the tree using the `draw.tree` function from the `maptree` package. Set `nodeinfo=TRUE`.  Which variable is split first in this decision tree? 
 
-      
+```{r}
+pruned.cannabis.tree = prune.tree(tree = cannabis.tree, best = best.cv)
+
+draw.tree(tree = pruned.cannabis.tree, size = 2, cex = .3, nodeinfo=TRUE)
+```
+
 
 __(c).__ Compute and print the confusion matrix for the _test_ data using the function `table(truth, predictions)` where `truth` and `predictions` are the true classes and the predicted classes from the tree model respectively.  Note: when generated the predicted classes for the test data, set `type="class"` in the `predict` function. Calculate the true positive rate (TPR) and false positive rate (FPR) for the confusion matrix.  Show how you arrived at your answer.
 
+```{r}
+
+pruned.predict.test = predict(pruned.cannabis.tree, drug_use_test, 
+                              type = "class")
+testtable = table(pruned.predict.test, drug_use_test$recent_cannabis_use)
+
+testtable
+
+tpr = testtable[2,2]/(testtable[2,2] + testtable[1,2])
+fpr = testtable[2,1]/(testtable[2,1] + testtable[1,1])
+
+tpr
+fpr
+```
+
+The true positive rate is 0.729 and the false positive rate is 0.15. TPR = TP/(TP + FN) and FPR = FP/(FP + TN)
       
 ##  3. Model Comparison
 
 This problem has 2 parts for all students. 
 
 __(a).__ Plot the ROC curves for both the logistic regression fit and the decision tree on the same plot.  Use `drug_use_test` to compute the ROC curves for both the logistic regression model and the best pruned tree model.
+```{r}
+pruned.predict.test = predict(pruned.cannabis.tree, drug_use_test,  type = "vector")
+pred.tree <- prediction(pruned.predict.test[,2], drug_use_test$recent_cannabis_use)
+perf.tree <- performance(pred.tree, "tpr", "fpr")
+
+logistic.probs.test = predict(logistic.cannabis, drug_use_test, type="response")
+pred.logistic = prediction(logistic.probs.test, drug_use_test$recent_cannabis_use)
+perf.logistic <- performance(pred.logistic, "tpr", "fpr")
+
+perf.tree@x.name = perf.logistic@x.name= "False Positive Rate"
+perf.tree@y.name = perf.logistic@y.name= "True Positive Rate"
+
+# plot the two ROC curves on the same plot
+plot(perf.tree, type = "l", col = "red")
+par(new=TRUE)
+plot(perf.logistic, type="l", col = "blue")
+
+legend("bottomright", legend=c("Tree", "Logistic"), col=c("red", "blue"), lty=1:2, cex=0.8)
+title("ROC", cex = 0.8)
+```
 
       
 __(b).__ Compute the AUC for both models and print them.  Which model has larger AUC?
+```{r}
+# Calculate AUC
+auc.tree = performance(pred.tree, "auc")@y.values
+auc.logistic = performance(pred.logistic, "auc")@y.values
 
+auc.tree
+auc.logistic
+```
+The AUC for the tree is 0.85 which is smaller than the AUC from the logistic model which is 0.87.
 
 # 4. Clustering and dimension reduction for gene expression data
 
