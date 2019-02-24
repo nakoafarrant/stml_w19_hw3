@@ -265,15 +265,37 @@ leukemia_data <- read_csv("leukemia_data.csv")
 __(a).__ The class of the first column of `leukemia_data`, `Type`, is set to `character` by default. Convert the `Type` column to a factor using the `mutate` function.  Use the `table` command to print the number of patients with each leukemia subtype.  Which leukemia subtype occurs the least in this data? 
 
 
+```{r}
+leukemia_data_factor <- leukemia_data %>%
+  mutate(Type = factor(Type))
 
+type_table = table(leukemia_data_factor$Type)
+
+```
+
+```{r}
+kable(type_table, "latex", booktabs = T, 
+      caption = "Number of Patients with Each Sub-Type of Leukemia", digits = 4) %>%  
+      kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+```
+
+The BCR-ABL sub-type of leukemia has the fewest patients in this data set at 15 individuals.
 
 __(b).__ Run PCA on the leukemia data using `prcomp` function with `scale=TRUE` and `center=TRUE` (this scales each gene to have mean 0 and variance 1).  Make sure you exclude the `Type` column when you run the PCA function (we are only interested in reducing the dimension of the gene expression values and PCA doesn't work with categorical data anyway).  Plot the proportion of variance explained by each principal component (PVE) and the cumulative PVE side-by-side.
 
 
 
 ```{r, eval=FALSE}
-pve <- ## Fill this in
-cumulative_pve <- ## Fill this in  
+# remove type column from consideration for the PCA function run
+leukemia_pca_df <- leukemia_data_factor %>% 
+  select(-Type)
+
+pr.out = prcomp(leukemia_pca_df, scale =TRUE, center=TRUE)
+
+pr.var = pr.out$sdev^2 # variance is the square of the standard deviation of the PCA output
+
+pve <- pr.var/sum(pr.var)
+cumulative_pve <- cumsum(pve)
 
 ## This will put the next two plots side by side    
 par(mfrow=c(1, 2))
@@ -286,34 +308,50 @@ plot(cumulative_pve, type="l", lwd=3)
     
 __(c).__  Use the results of PCA to project the data into the first two principal component dimensions. `prcomp` returns this dimension reduced data in the first columns of `x`.  Plot the data as a scatter plot using `plot` function with `col=plot_colors` where `plot_colors` is defined 
 
+
 ```{r, echo=TRUE}
 rainbow_colors <- rainbow(7)
-plot_colors <- rainbow_colors[leukemia_data$Type]
+plot_colors <- rainbow_colors[leukemia_data_factor$Type]
 ```
 
 This will color the points according to the leukemia subtype.  Add the leukemia type labels to the plot using `text` with `labels` argument set to the leukemia type and the col to `plot_colors` (it may help legibility to make the points on the plot very small by setting `cex` to a small number). Which group is most clearly separated from the others along the PC1 axis?  Which genes have the highest absolute loadings for PC1 (the genes that have the largest weights in the weighted average used to create the new variable PC1)?  You can find these by taking the absolute values of the first principal component loadings and sorting them.  Print the first 6 genes in this sorted vector using the `head` function. 
 
+```{r}
+par(mfrow=c(1, 1))
+plot(pr.out$x[,1:2], col = plot_colors, pch =19, xlab ="Z1",ylab="Z2", cex = 0.2)
+#text("bottomright", labels=paste(leukemia_data_factor$Type))
+
+```
 
 
 __(d).__ (__231 Only__) PCA orders the principal components according to the amount of total variation in the data that they explain.  This does not mean, however, that the principal components are sorted in terms of how useful they are at capturing variation between the leukemia groups. For example, if gene expression varied significantly with age and gender (independent of leukemia status), the first principal components could reflect genetic variation due to age and gender, but not to leukemia.  The first scatter plot shows that the second PC is not a good discriminator of leukemia type.  See if the 3rd PC is better at discriminating between leukemia types by plotting the data projected onto the _first_ and _third_ principal components (not the second).  
 
+```{r}
+par(mfrow=c(1, 1))
+plot(pr.out$x[,c(1,3)], col = plot_colors, pch =19, xlab ="Z1",ylab="Z3", cex = 0.2)
+# text(labels(leukemia_data_factor$Type))
+```
+
 
 __(e.)__  (__231 Only__)  For this part we will be using the `ggridges` library.  Create a new tibble where the first column (call it `z1`) is the projection of the data onto the first principal component and the second column is the leukemia subtype (`Type`).  Use `ggplot` with `geom_density_ridges` to create multiple stacked density plots of the projected gene expression data.  Set the ggplot aesthetics to `aes(x = z1, y = Type, fill = Type)`.  Make another identical plot, except replace `z1` with `z3`, the projection of the data onto the third principal component. Identify two leukemia subtypes that are nearly indistinguishable when the gene expression data is projected onto the first PC direction, but easily distinguishable when projected onto the third PC direction.   
 
+```{r}
+
+```
 
 
 __(f.)__ Use the `filter` command to create a new tibble `leukemia_subset` by subsetting to include only rows for which `Type` is either T-ALL, TEL-AML1, or Hyperdip50.  Compute a euclidean distance matrix between the subjects using the `dist` function and then run hierarchical clustering using complete linkage. Plot two dendrograms based on the hierarchical clustering result. In the first plot, force 3 leukemia types to be the labels of terminal nodes, color the branches and labels to have 3 groups and rotate the dendrogram counter-clockwise to have all the terminal nodes on the right. In the second plot, do all the same things except that this time color all the branches and labels to have 5 groups. Please make sure library `dendextend` is installed. Hint: `as.dendrogram`, `set_labels`, `color_branches`, `color_labels` and `plot(..., horiz = TRUE)` may be useful.
+
+```{r}
+leukemia_subset <- leukemia_data_factor %>% 
+  filter(Type = "T-ALL" && Type = "TEL-AML1" && Type = "Hyperdip50")
+```
+
 
 ```{r, eval=F, include=F}
 #In the second plot, rotate the dendrogram counter-clockwise to have all the terminal nodes on the right, force the 3 leukemia types to be the labels of terminal nodes and color the labels by the 3 types of leukemia.
 ```
 
-
-```{r, include=FALSE, eva=FALSE}
-# __(g).__ (__231 only__).  Use `levelplot` to plot the distance matrix from the part above.  Order the rows and columns by the hierarchical clustering you obtained in the previous part.  If the plot seems faint, you can adjust the color bar by setting the `at` argument to `at=pretty(c(min, max), n=10)` where you will choose the value of `min` and `max` as smallest and largest distances in the color range.  You should see a matrix with a _block diagonal_ structure. The labels (corresponding to leukemia types) will be hard to read on the plot.  Print them out by looking at `leukemia_subset$Type` ordered by clustering order.  Based on this plot which two leukemia types (of the three in the subset) seem more similar to one another?
-# 
-
-```
 
 __(g).__  (__231 only__).  Use `superheat` to plot the distance matrix from the part above.  Order the rows and columns by the hierarchical clustering you obtained in the previous part. You should see a matrix with a _block diagonal_ structure. The labels (corresponding to leukemia types) will not be available to read on the plot.  Print them out by looking at `leukemia_subset$Type` ordered by clustering order.  Based on this plot which two leukemia types (of the three in the subset) seem more similar to one another? Hint: use `heat.pal = c("dark red", "red", "orange", "yellow"))` for colorbar specification in `superheat`.
 
