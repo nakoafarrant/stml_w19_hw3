@@ -323,7 +323,7 @@ par(mfrow=c(1, 1))
 PC1 = pr.out$x[,1]
 PC2 = pr.out$x[,2]
 plot(PC1, PC2, col = plot_colors, pch =19, xlab ="Z1",ylab="Z2", cex = 0.2)
-#text("bottomright", labels=paste(leukemia_data_factor$Type))
+text(30, -10, labels = leukemia_data_factor$Type)
 
 ```
 
@@ -379,37 +379,35 @@ library(dendextend)
 
 
 ```{r fig.align="center", fig.height=8, fig.width=5}
-leukemia_subset <- leukemia_data_factor %>% 
+leukemia_subset <- leukemia_data_factor %>%
   filter(Type == "T-ALL" | Type == "TEL-AML1" | Type == "Hyperdip50") 
   
-leukemia_plot3  <- leukemia_subset %>% 
+leukemia_dend3  <- leukemia_subset %>% 
   dist() %>% 
   hclust(method = "complete") %>%
   as.dendrogram() %>% 
   color_branches(k = 3) %>%  
   color_labels(k = 3)
 
-# something might be wrong with the labels
-set_labels(leukemia_plot3, labels=leukemia_subset$Type[order.dendrogram(leukemia_plot3)]) 
-set(leukemia_plot3, "labels_cex", 0.1)
-plot(leukemia_plot3, horiz = T)
+leukemia_dend3 = set_labels(leukemia_dend3, labels=leukemia_subset$Type[order.dendrogram(leukemia_dend3)]) 
+leukemia_dend3= set(leukemia_dend3, "labels_cex", 0.15)
+plot(leukemia_dend3, horiz = T)
 
 
 ```
 
 
 ```{r fig.align="center", fig.height=8, fig.width=5}
-leukemia_plot5  <- leukemia_subset %>% 
+leukemia_dend5  <- leukemia_subset %>% 
   dist() %>% 
   hclust(method = "complete") %>%
   as.dendrogram() %>% 
   color_branches(k = 5) %>%  
   color_labels(k = 5)
 
-# something might be wrong with the labels
-set_labels(leukemia_plot5, labels=leukemia_subset$Type[order.dendrogram(leukemia_plot5)])
-set(leukemia_plot5, "labels_cex", 0.1)
-plot(leukemia_plot5, horiz = T)
+leukemia_dend5 = set_labels(leukemia_dend5, labels=leukemia_subset$Type[order.dendrogram(leukemia_dend5)]) 
+leukemia_dend5 = set(leukemia_dend5, "labels_cex", 0.15)
+plot(leukemia_dend5, horiz = T)
 ```
 
 
