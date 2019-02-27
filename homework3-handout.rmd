@@ -101,6 +101,9 @@ train_index <- sample(nrow(drug_use_subset), 1500)
 
 drug_use_train <- drug_use_subset[train_index,]
 drug_use_test <- drug_use_subset[-train_index, ]
+
+dim(drug_use_train)
+dim(drug_use_test)
 ```
       
 __(c).__  Fit a logistic regression to model `recent_cannabis_use` as a function of all other predictors in `drug_use_train`.  Fit this regression using the training data only.  Display the results by calling the `summary` function on the logistic regression object.
@@ -112,9 +115,6 @@ logistic.cannabis =glm(recent_cannabis_use~., data=drug_use_train, family =binom
 summary(logistic.cannabis)
 ```
 
-
-
-<!-- #__(d).__  You observe the prediction probability for `recent_canabis_use` for a male.  If this person was a female (assuming all other predictors remain the same) how would the _odds_ of the prediction change? If a different person was a female with an age was 2 units larger than the male (remember age is not in terms of years for this data so we call it "units") how would the odds of cannabis use for this person differ from the male (again assume all other predictors remain the same)?  -->
 
 
 __(d).__ (__231__ only).  Generalized linear models for binary data involve a link function, $g$ which relates a linear function of the predictors to a function of the probability $p$: $g(p) = \beta_0 + \beta_1X_1 + ... \beta_p X_p$.  $g$ is a function which maps $p \in [0, 1]$ to $\mathbb{R}$.  Logistic regression is based on the _logit_ link function, $g(p) = log(p/(1-p))$.  In class we mentioned another link function, called the probit: $g(p) = \Phi^{-1}(p)$ where $\Phi$ is the cumulative density function of the normal distribution. Another often used link function is the "c-log-log" link: $g(p) = log(-log(1-p))$.  
@@ -184,7 +184,7 @@ cannabis.tree.cv$dev
 
 best.cv
 ```
-The tree that minimizes the cross validation error has 7 nodes.
+The tree that minimizes the cross validation error has `r best.cv` nodes.
         
 __(b).__ Prune the tree to the size found in the previous part and plot the tree using the `draw.tree` function from the `maptree` package. Set `nodeinfo=TRUE`.  Which variable is split first in this decision tree? 
 
@@ -212,7 +212,7 @@ tpr
 fpr
 ```
 
-The true positive rate is 0.729 and the false positive rate is 0.15. TPR = TP/(TP + FN) and FPR = FP/(FP + TN)
+The true positive rate is `r tpr` and the false positive rate is `r fpr`. TPR = TP/(TP + FN) and FPR = FP/(FP + TN)
       
 ##  3. Model Comparison
 
@@ -250,7 +250,7 @@ auc.logistic = performance(pred.logistic, "auc")@y.values
 auc.tree
 auc.logistic
 ```
-The AUC for the tree is 0.85 which is smaller than the AUC from the logistic model which is 0.87.
+The AUC for the tree is `r auc.tree` which is smaller than the AUC from the logistic model which is `r auc.logistic`.
 
 # 4. Clustering and dimension reduction for gene expression data
 
@@ -322,11 +322,15 @@ par(mfrow=c(1, 1))
 
 PC1 = pr.out$x[,1]
 PC2 = pr.out$x[,2]
-plot(PC1, PC2, col = plot_colors, pch =19, xlab ="Z1",ylab="Z2", cex = 0.2)
-text(30, -10, labels = leukemia_data_factor$Type)
+plot(PC1, PC2, col = plot_colors, pch =19, xlab ="Z1",ylab="Z2", cex = 0.1)
+text(pr.out$x[,c(1,2)], labels=(leukemia_data_factor$Type), cex = 0.25)
+
+abs_pc1 = order(abs(PC1))
+head(leukemia_data_factor$Type[abs_pc1], 6)
 
 ```
 
+T-ALL seems to be most clearly separated from the other groups on the PC1 axis based on the figure. The  top 6 genes that seem to have the highest absolute loadings for PC1 are: TEL-AML1, Hyperdip50, BCR-ABL, E2A-PBX1, Hyperdip50, and OTHERS.
 
 __(d).__ (__231 Only__) PCA orders the principal components according to the amount of total variation in the data that they explain.  This does not mean, however, that the principal components are sorted in terms of how useful they are at capturing variation between the leukemia groups. For example, if gene expression varied significantly with age and gender (independent of leukemia status), the first principal components could reflect genetic variation due to age and gender, but not to leukemia.  The first scatter plot shows that the second PC is not a good discriminator of leukemia type.  See if the 3rd PC is better at discriminating between leukemia types by plotting the data projected onto the _first_ and _third_ principal components (not the second).  
 
@@ -334,10 +338,11 @@ __(d).__ (__231 Only__) PCA orders the principal components according to the amo
 par(mfrow=c(1, 1))
 
 PC3 = pr.out$x[,3]
-plot(PC1, PC3, col = plot_colors, pch =19, xlab ="Z1",ylab="Z3", cex = 0.2)
-# text(labels(leukemia_data_factor$Type))
+plot(PC1, PC3, col = plot_colors, pch =19, xlab ="Z1",ylab="Z3", cex = 0.1)
+text(pr.out$x[,c(1,3)], labels=(leukemia_data_factor$Type), cex = 0.25)
 ```
 
+This second scatter with the first and third principal components does a better job of separating the different genes as compared to the first scatter plot with the PC1 and PC2. In this second scatter, the separation of T-ALL has slightly worsened than in the previous scatter. However, T-ALL is still fairly well separated in the second scatter. Additionally there is better separation of E2A-PBX1, Hyperdip50, and TEL-AML1 genes in this second scatter. As a result, PC3 seems to be better at discriminating leukemia types than PC2.
 
 __(e.)__  (__231 Only__)  For this part we will be using the `ggridges` library.  Create a new tibble where the first column (call it `z1`) is the projection of the data onto the first principal component and the second column is the leukemia subtype (`Type`).  Use `ggplot` with `geom_density_ridges` to create multiple stacked density plots of the projected gene expression data.  Set the ggplot aesthetics to `aes(x = z1, y = Type, fill = Type)`.  Make another identical plot, except replace `z1` with `z3`, the projection of the data onto the third principal component. Identify two leukemia subtypes that are nearly indistinguishable when the gene expression data is projected onto the first PC direction, but easily distinguishable when projected onto the third PC direction.   
 
@@ -371,6 +376,9 @@ ggridge_plot_z3 = ggplot(pca_tibble_z3, aes(x=z3, y = Type, fill = Type)) +
 ggridge_plot_z3
 ```
 
+
+E2A-PBX1 and the OTHERS genes are fairly indistinguishable when projected onto the first principal component, but when the data is projected on the third principal component, these two gene categories are fairly distinct from each other. Hyperdip50 and BCR-ABL are also fairly similar when projected on the first principal component, and while there some distinguishing attributes for the densities of these two curves when they're projected on the third principal component, it isn't clear that this projection on the third component is sufficient to distinguish these two gene groups.
+
 __(f.)__ Use the `filter` command to create a new tibble `leukemia_subset` by subsetting to include only rows for which `Type` is either T-ALL, TEL-AML1, or Hyperdip50.  Compute a euclidean distance matrix between the subjects using the `dist` function and then run hierarchical clustering using complete linkage. Plot two dendrograms based on the hierarchical clustering result. In the first plot, force 3 leukemia types to be the labels of terminal nodes, color the branches and labels to have 3 groups and rotate the dendrogram counter-clockwise to have all the terminal nodes on the right. In the second plot, do all the same things except that this time color all the branches and labels to have 5 groups. Please make sure library `dendextend` is installed. Hint: `as.dendrogram`, `set_labels`, `color_branches`, `color_labels` and `plot(..., horiz = TRUE)` may be useful.
 
 ```{r}
@@ -381,10 +389,14 @@ library(dendextend)
 ```{r fig.align="center", fig.height=8, fig.width=5}
 leukemia_subset <- leukemia_data_factor %>%
   filter(Type == "T-ALL" | Type == "TEL-AML1" | Type == "Hyperdip50") 
+
+# do we need to re-scale the subset before computing the distance matrix?
+dis  <- dist(scale(leukemia_subset[,-c(1)], center=TRUE, scale=TRUE), method = "euclidean")
+
+set.seed(1)
+leuk_hc = hclust(dis, method = "complete")
   
-leukemia_dend3  <- leukemia_subset %>% 
-  dist() %>% 
-  hclust(method = "complete") %>%
+leukemia_dend3 = leuk_hc %>% 
   as.dendrogram() %>% 
   color_branches(k = 3) %>%  
   color_labels(k = 3)
@@ -398,9 +410,8 @@ plot(leukemia_dend3, horiz = T)
 
 
 ```{r fig.align="center", fig.height=8, fig.width=5}
-leukemia_dend5  <- leukemia_subset %>% 
-  dist() %>% 
-  hclust(method = "complete") %>%
+
+leukemia_dend5 = leuk_hc %>% 
   as.dendrogram() %>% 
   color_branches(k = 5) %>%  
   color_labels(k = 5)
@@ -413,16 +424,66 @@ plot(leukemia_dend5, horiz = T)
 
 __(g).__  (__231 only__).  Use `superheat` to plot the distance matrix from the part above.  Order the rows and columns by the hierarchical clustering you obtained in the previous part. You should see a matrix with a _block diagonal_ structure. The labels (corresponding to leukemia types) will not be available to read on the plot.  Print them out by looking at `leukemia_subset$Type` ordered by clustering order.  Based on this plot which two leukemia types (of the three in the subset) seem more similar to one another? Hint: use `heat.pal = c("dark red", "red", "orange", "yellow"))` for colorbar specification in `superheat`.
 
-```{r}
+
+
+```{r fig.align="center", fig.height=8, fig.width=5}
+types = paste(leukemia_subset$Type[order.dendrogram(leukemia_dend3)])
+hc.order = leuk_hc$order
+
+superheat(as.matrix(dis)[hc.order, hc.order], 
+          membership.rows = types,
+          membership.cols = types,
+          left.label.text.size = 2,
+          bottom.label.text.size = 2,
+          heat.pal = c("dark red", "red", "orange", "yellow"))
 
 ```
+
+Based on the heatmap, T-ALL and Hyperdip50 seem to have more in common with one another than other subsets of genes. However, T-ALL and TEL-AML1 seem to have only slightly less in common than the T-ALL and Hyperdip50 pairing of genes based on visual inspection.
 
 __(h).__  (__231 only__). You can also use `superheat` to generate a hierachical clustering dendrogram or a kmeans clustering. First, use `leukemia_subset` to run hierachical clustering and draw the dendrogram. Second, use the same dataset to run kmeans clustering with three the optimal number of clusters, and order the genes (columns) based on hierarchical clustering.
 
 Hint: arguments `row.dendrogram`, `clustering.method`, `n.cluster.rows` and `pretty.order.cols` may be useful, please read the argument descriptions before you attempt the problem. The package manual can be found here: <https://cran.r-project.org/web/packages/superheat/superheat.pdf>
 
+
+
+```{r fig.align="center", fig.height=8, fig.width=5}
+hc.heatmap = superheat(as.matrix(dis)[hc.order, hc.order],
+          clustering.method = "hierarchical",
+          row.dendrogram = T,
+          left.label.text.size = 2,
+          bottom.label.text.size = 2,
+          heat.pal = c("dark red", "red", "orange", "yellow"))
+```
+
+
+```{r fig.align="center", fig.height=8, fig.width=5}
+set.seed(1)
+hc2.heatmap = superheat(leukemia_subset[,-1],
+          scale = T,
+          clustering.method = "hierarchical",
+          row.dendrogram = T,
+          heat.pal = c("dark red", "red", "orange", "yellow"),
+          grid.hline.col = "white",
+          grid.vline.col = "white")
+
+hc2.heatmap$membership.cols
+
+```
+
 ```{r}
 
+# what if you calculate kmeans first and then you set membership rows based on the kmeans and the membership columns based on the hierarchical clustering
+
+set.seed(1)
+kmeans.heatmap = superheat(as.matrix(dis)[hc.order, hc.order],
+          scale = T,
+          n.clusters.rows = 3,
+          #membership.cols = hc.heatmap$membership.cols,
+          pretty.order.cols = T, # logical specifying to order the columns based on hierarchical clustering
+          left.label = "cluster",
+          heat.pal = c("dark red", "red", "orange", "yellow")
+          )
 ```
 
 
