@@ -451,70 +451,27 @@ Hint: arguments `row.dendrogram`, `clustering.method`, `n.cluster.rows` and `pre
 hc.heatmap = superheat(as.matrix(dis)[hc.order, hc.order],
           clustering.method = "hierarchical",
           row.dendrogram = T,
+          #pretty.order.cols = T,
+          # bottom.label = "variable",
           left.label.text.size = 2,
           bottom.label.text.size = 2,
           heat.pal = c("dark red", "red", "orange", "yellow"))
 ```
 
 
+
 ```{r fig.align="center", fig.height=8, fig.width=5}
-set.seed(1)
-hc2.heatmap = superheat(leukemia_subset[,-1],
-          scale = T,
-          clustering.method = "hierarchical",
-          row.dendrogram = T,
-          heat.pal = c("dark red", "red", "orange", "yellow"),
-          grid.hline.col = "white",
-          grid.vline.col = "white")
-
-hc2.heatmap$membership.cols
-
-```
-
-```{r}
-
-# what if you calculate kmeans first and then you set membership rows based on the kmeans and the membership columns based on the hierarchical clustering
 
 set.seed(1)
 kmeans.heatmap = superheat(as.matrix(dis)[hc.order, hc.order],
           scale = T,
           n.clusters.rows = 3,
-          #membership.cols = hc.heatmap$membership.cols,
           pretty.order.cols = T, # logical specifying to order the columns based on hierarchical clustering
           left.label = "cluster",
+          left.label.text.size = 2,
+          bottom.label.text.size = 2,
           heat.pal = c("dark red", "red", "orange", "yellow")
           )
 ```
 
-
-
-
-<!-- ### (__231 only__) -->
-
-<!-- ```{r, demean} -->
-
-<!-- leukemia_demeaned <- leukemia_subset %>% select(-1) %>% mutate_all(funs(. - mean(.))) -->
-
-<!-- prc <- prcomp(leukemia_demeaned) -->
-<!-- xproj <- prc$x[, 1:10] -->
-
-<!-- subject_dists <- xproj %>% t %>% cor %>% abs %>% (function(x) {(1 - x)}) %>% as.dist -->
-
-<!-- res <- hclust(subject_dists) -->
-<!-- plot(res, labels=paste(leukemia_subset$Type, 1:nrow(leukemia_subset)), cex=0.3) -->
-<!-- levelplot(as.matrix(subject_dists)[res$order, res$order]) -->
-
-<!-- ``` -->
-
-
-<!-- ### e) (__231 only__)  In this part we will use a more sophisticated dimension reduction algorithm called `tsne`.  Run `install.packages("Rtsne")` if the package is not installed.   -->
-<!-- ```{r} -->
-
-<!-- tsne <- leukemia_data %>% select(-1) %>% Rtsne(check_duplicates = FALSE, pca = FALSE, perplexity=30, theta=0.5, dims=2) -->
-<!-- plot(tsne$Y, t='n', xlab="", ylab="") -->
-<!-- text(tsne$Y, labels=leukemia_data$Type, col=cols[leukemia_data$Type]) -->
-
-<!-- summary(NbClust(tsne$Y, method="kmeans")) -->
-
-<!-- ``` -->
 
