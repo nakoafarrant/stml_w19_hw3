@@ -447,12 +447,13 @@ Hint: arguments `row.dendrogram`, `clustering.method`, `n.cluster.rows` and `pre
 
 
 
+
 ```{r fig.align="center", fig.height=8, fig.width=5}
-hc.heatmap = superheat(as.matrix(dis)[hc.order, hc.order],
+hc.heatmap = superheat(leukemia_subset[,-1],
           clustering.method = "hierarchical",
           row.dendrogram = T,
-          #pretty.order.cols = T,
-          # bottom.label = "variable",
+          pretty.order.cols = T,
+          left.label = "variable",
           left.label.text.size = 2,
           bottom.label.text.size = 2,
           heat.pal = c("dark red", "red", "orange", "yellow"))
@@ -463,8 +464,9 @@ hc.heatmap = superheat(as.matrix(dis)[hc.order, hc.order],
 ```{r fig.align="center", fig.height=8, fig.width=5}
 
 set.seed(1)
-kmeans.heatmap = superheat(as.matrix(dis)[hc.order, hc.order],
+kmeans.heatmap = superheat(leukemia_subset[,-1],
           scale = T,
+          clustering.method = "kmeans",
           n.clusters.rows = 3,
           pretty.order.cols = T, # logical specifying to order the columns based on hierarchical clustering
           left.label = "cluster",
